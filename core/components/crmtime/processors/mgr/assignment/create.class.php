@@ -7,7 +7,6 @@ class CrmTimeMgrAssignmentCreateProcessor extends modProcessor
         $userId = (int)$this->getProperty('user_id');
         $customerId = (int)$this->getProperty('customer_id');
         $workplaceId = (int)$this->getProperty('workplace_id');
-        $rate = (float)$this->getProperty('rate');
         $startDate = trim((string)$this->getProperty('start_date'));
         $endDate = trim((string)$this->getProperty('end_date'));
 
@@ -21,10 +20,6 @@ class CrmTimeMgrAssignmentCreateProcessor extends modProcessor
 
         if ($workplaceId <= 0) {
             return $this->failure('Не выбрано место работы');
-        }
-
-        if ($rate < 0) {
-            return $this->failure('Ставка не может быть отрицательной');
         }
 
         $user = $this->modx->getObject('modUser', array(
@@ -69,7 +64,7 @@ class CrmTimeMgrAssignmentCreateProcessor extends modProcessor
             'user_id' => $userId,
             'customer_id' => $customerId,
             'workplace_id' => $workplaceId,
-            'rate' => $rate,
+            'rate' => 0,
             'start_date' => $startDate !== '' ? $startDate : null,
             'end_date' => $endDate !== '' ? $endDate : null,
             'is_active' => 1,
