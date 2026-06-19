@@ -41,7 +41,6 @@ document.addEventListener('DOMContentLoaded', function () {
     var assignmentUserId = document.getElementById('crmtime-assignment-user-id');
     var assignmentCustomerId = document.getElementById('crmtime-assignment-customer-id');
     var assignmentWorkplaceId = document.getElementById('crmtime-assignment-workplace-id');
-    var assignmentRate = document.getElementById('crmtime-assignment-rate');
     var assignmentStartDate = document.getElementById('crmtime-assignment-start-date');
     var assignmentEndDate = document.getElementById('crmtime-assignment-end-date');
 
@@ -54,6 +53,11 @@ document.addEventListener('DOMContentLoaded', function () {
     var employeeColor = document.getElementById('crmtime-employee-color');
     var employeeCode = document.getElementById('crmtime-employee-code');
     var employeeNote = document.getElementById('crmtime-employee-note');
+    var employeeStandardRate = document.getElementById('crmtime-employee-standard-rate');
+    var employeeNightCoeff = document.getElementById('crmtime-employee-night-coeff');
+    var employeeSundayCoeff = document.getElementById('crmtime-employee-sunday-coeff');
+    var employeeHolidayCoeff = document.getElementById('crmtime-employee-holiday-coeff');
+    var employeeHomeAddress = document.getElementById('crmtime-employee-home-address');
     var saveEmployeeBtn = document.getElementById('crmtime-save-employee-btn');
     var cancelEmployeeBtn = document.getElementById('crmtime-cancel-employee-btn');
     var employeeMessage = document.getElementById('crmtime-employee-message');
@@ -94,6 +98,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var approvalsList = document.getElementById('crmtime-approvals-list');
 
     var reportRunBtn = document.getElementById('crmtime-report-run-btn');
+    var reportPdfBtn = document.getElementById('crmtime-report-pdf-btn');
     var reportDateFrom = document.getElementById('crmtime-report-date-from');
     var reportDateTo = document.getElementById('crmtime-report-date-to');
     var reportCustomerId = document.getElementById('crmtime-report-customer-id');
@@ -102,6 +107,10 @@ document.addEventListener('DOMContentLoaded', function () {
     var reportStats = document.getElementById('crmtime-report-stats');
     var reportEmployees = document.getElementById('crmtime-report-employees');
     var reportRows = document.getElementById('crmtime-report-rows');
+
+    var documentsRefreshBtn = document.getElementById('crmtime-documents-refresh-btn');
+    var documentsMessage = document.getElementById('crmtime-documents-message');
+    var documentsList = document.getElementById('crmtime-documents-list');
 
     var currentCustomers = [];
     var currentWorkplaces = [];
@@ -253,6 +262,17 @@ document.addEventListener('DOMContentLoaded', function () {
         return flags.length ? flags.join(', ') : 'Стандарт';
     }
 
+    function formatFileSize(bytes) {
+        bytes = parseFloat(bytes || 0);
+        if (!bytes || bytes < 1024) {
+            return bytes ? bytes.toFixed(0) + ' B' : '0 B';
+        }
+        if (bytes < 1024 * 1024) {
+            return (bytes / 1024).toFixed(1) + ' KB';
+        }
+        return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+
     function resetCustomerForm() {
         customerIdField.value = '';
         customerName.value = '';
@@ -300,7 +320,6 @@ document.addEventListener('DOMContentLoaded', function () {
         assignmentUserId.value = '';
         assignmentCustomerId.value = '';
         assignmentWorkplaceId.value = '';
-        assignmentRate.value = '';
         assignmentStartDate.value = '';
         assignmentEndDate.value = '';
         assignmentFormTitle.textContent = 'Назначения';
@@ -313,7 +332,6 @@ document.addEventListener('DOMContentLoaded', function () {
         assignmentUserId.value = item.user_id || '';
         assignmentCustomerId.value = item.customer_id || '';
         assignmentWorkplaceId.value = item.workplace_id || '';
-        assignmentRate.value = item.rate || '';
         assignmentStartDate.value = item.start_date || '';
         assignmentEndDate.value = item.end_date || '';
         assignmentFormTitle.textContent = 'Редактирование назначения';
@@ -331,6 +349,11 @@ document.addEventListener('DOMContentLoaded', function () {
         employeeColor.value = '#3788d8';
         employeeCode.value = '';
         employeeNote.value = '';
+        employeeStandardRate.value = '0.00';
+        employeeNightCoeff.value = '1.00';
+        employeeSundayCoeff.value = '1.00';
+        employeeHolidayCoeff.value = '1.00';
+        employeeHomeAddress.value = '';
         employeeFormTitle.textContent = 'Сотрудники CRM';
         saveEmployeeBtn.textContent = 'Сохранить CRM-настройки';
         cancelEmployeeBtn.style.display = 'none';
@@ -345,6 +368,11 @@ document.addEventListener('DOMContentLoaded', function () {
         employeeColor.value = item.color || '#3788d8';
         employeeCode.value = item.crm_code || '';
         employeeNote.value = item.crm_note || '';
+        employeeStandardRate.value = item.standard_rate || '0.00';
+        employeeNightCoeff.value = item.night_coeff || '1.00';
+        employeeSundayCoeff.value = item.sunday_coeff || '1.00';
+        employeeHolidayCoeff.value = item.holiday_coeff || '1.00';
+        employeeHomeAddress.value = item.home_address || '';
         employeeFormTitle.textContent = 'Редактирование CRM-настроек сотрудника';
         saveEmployeeBtn.textContent = 'Сохранить изменения';
         cancelEmployeeBtn.style.display = '';
@@ -430,32 +458,17 @@ document.addEventListener('DOMContentLoaded', function () {
         html += '</tbody></table>';
         customersList.innerHTML = '<div class="crmtime-table-wrapper">' + html + '</div>';
 
-        fillSelect(
-            assignmentCustomerId,
-            items,
-            'id',
-            function (item) { return item.id + ' — ' + item.name; },
-            'Выберите заказчика',
-            selectedAssignmentCustomer
-        );
+        fillSelect(assignmentCustomerId, items, 'id', function (item) {
+            return item.id + ' — ' + item.name;
+        }, 'Выберите заказчика', selectedAssignmentCustomer);
 
-        fillSelect(
-            calendarFilterCustomerId,
-            items,
-            'id',
-            function (item) { return item.id + ' — ' + item.name; },
-            'Все заказчики',
-            selectedCalendarCustomer
-        );
+        fillSelect(calendarFilterCustomerId, items, 'id', function (item) {
+            return item.id + ' — ' + item.name;
+        }, 'Все заказчики', selectedCalendarCustomer);
 
-        fillSelect(
-            reportCustomerId,
-            items,
-            'id',
-            function (item) { return item.id + ' — ' + item.name; },
-            'Все заказчики',
-            reportCustomerId ? reportCustomerId.value : ''
-        );
+        fillSelect(reportCustomerId, items, 'id', function (item) {
+            return item.id + ' — ' + item.name;
+        }, 'Все заказчики', reportCustomerId ? reportCustomerId.value : '');
     }
 
     function renderWorkplaces(items) {
@@ -492,23 +505,13 @@ document.addEventListener('DOMContentLoaded', function () {
         html += '</tbody></table>';
         workplacesList.innerHTML = '<div class="crmtime-table-wrapper">' + html + '</div>';
 
-        fillSelect(
-            assignmentWorkplaceId,
-            items,
-            'id',
-            function (item) { return item.id + ' — ' + item.name + ' (' + item.customer_name + ')'; },
-            'Выберите место работы',
-            selectedAssignmentWorkplace
-        );
+        fillSelect(assignmentWorkplaceId, items, 'id', function (item) {
+            return item.id + ' — ' + item.name + ' (' + item.customer_name + ')';
+        }, 'Выберите место работы', selectedAssignmentWorkplace);
 
-        fillSelect(
-            calendarFilterWorkplaceId,
-            items,
-            'id',
-            function (item) { return item.id + ' — ' + item.name + ' (' + item.customer_name + ')'; },
-            'Все места работы',
-            selectedCalendarWorkplace
-        );
+        fillSelect(calendarFilterWorkplaceId, items, 'id', function (item) {
+            return item.id + ' — ' + item.name + ' (' + item.customer_name + ')';
+        }, 'Все места работы', selectedCalendarWorkplace);
     }
 
     function renderEmployees(items) {
@@ -527,7 +530,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var selectedReportUser = reportUserId ? reportUserId.value : '';
 
         var html = '<table class="crmtime-table">';
-        html += '<thead><tr><th>ID</th><th>Логин</th><th>Имя</th><th>Email</th><th>CRM</th><th>Цвет</th><th>Код</th><th>Заметка</th><th>Действия</th></tr></thead><tbody>';
+        html += '<thead><tr><th>ID</th><th>Логин</th><th>Имя</th><th>Email</th><th>CRM</th><th>Цвет</th><th>Стандарт</th><th>Ночь</th><th>Воскрес.</th><th>Праздн.</th><th>Адрес</th><th>Код</th><th>Заметка</th><th>Действия</th></tr></thead><tbody>';
 
         items.forEach(function (item) {
             var activeText = parseInt(item.crm_active, 10) === 1 ? 'Да' : 'Нет';
@@ -539,6 +542,11 @@ document.addEventListener('DOMContentLoaded', function () {
             html += '<td>' + escapeHtml(item.email) + '</td>';
             html += '<td>' + escapeHtml(activeText) + '</td>';
             html += '<td><span class="crmtime-color-dot" style="background:' + escapeHtml(item.color || '#3788d8') + ';"></span> ' + escapeHtml(item.color || '#3788d8') + '</td>';
+            html += '<td>' + escapeHtml(item.standard_rate || '0.00') + '</td>';
+            html += '<td>' + escapeHtml(item.night_coeff || '1.00') + '</td>';
+            html += '<td>' + escapeHtml(item.sunday_coeff || '1.00') + '</td>';
+            html += '<td>' + escapeHtml(item.holiday_coeff || '1.00') + '</td>';
+            html += '<td>' + escapeHtml(item.home_address || '') + '</td>';
             html += '<td>' + escapeHtml(item.crm_code) + '</td>';
             html += '<td>' + escapeHtml(item.crm_note) + '</td>';
             html += '<td><button type="button" class="btn crmtime-entity-action" data-entity="employee" data-action="edit" data-id="' + escapeHtml(item.id) + '">Настроить</button></td>';
@@ -548,50 +556,29 @@ document.addEventListener('DOMContentLoaded', function () {
         html += '</tbody></table>';
         employeesList.innerHTML = '<div class="crmtime-table-wrapper">' + html + '</div>';
 
-        fillSelect(
-            assignmentUserId,
-            items,
-            'id',
-            function (item) {
-                var text = item.username;
-                if (item.fullname) {
-                    text += ' — ' + item.fullname;
-                }
-                return item.id + ' — ' + text;
-            },
-            'Выберите сотрудника',
-            selectedAssignmentUser
-        );
+        fillSelect(assignmentUserId, items, 'id', function (item) {
+            var text = item.username;
+            if (item.fullname) {
+                text += ' — ' + item.fullname;
+            }
+            return item.id + ' — ' + text;
+        }, 'Выберите сотрудника', selectedAssignmentUser);
 
-        fillSelect(
-            calendarFilterUserId,
-            items,
-            'id',
-            function (item) {
-                var text = item.username;
-                if (item.fullname) {
-                    text += ' — ' + item.fullname;
-                }
-                return item.id + ' — ' + text;
-            },
-            'Все сотрудники',
-            selectedCalendarUser
-        );
+        fillSelect(calendarFilterUserId, items, 'id', function (item) {
+            var text = item.username;
+            if (item.fullname) {
+                text += ' — ' + item.fullname;
+            }
+            return item.id + ' — ' + text;
+        }, 'Все сотрудники', selectedCalendarUser);
 
-        fillSelect(
-            reportUserId,
-            items,
-            'id',
-            function (item) {
-                var text = item.username;
-                if (item.fullname) {
-                    text += ' — ' + item.fullname;
-                }
-                return item.id + ' — ' + text;
-            },
-            'Все сотрудники',
-            selectedReportUser
-        );
+        fillSelect(reportUserId, items, 'id', function (item) {
+            var text = item.username;
+            if (item.fullname) {
+                text += ' — ' + item.fullname;
+            }
+            return item.id + ' — ' + text;
+        }, 'Все сотрудники', selectedReportUser);
     }
 
     function renderAssignments(items) {
@@ -599,12 +586,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (!items || !items.length) {
             assignmentsList.innerHTML = '<p>Пока нет назначений.</p>';
-            fillSelect(timesheetAssignmentId, [], 'id', function () { return ''; }, 'Выберите назначение');
+            fillSelect(timesheetAssignmentId, [], 'id', function () { return ''; }, 'Выберите назначение', '');
             return;
         }
 
         var html = '<table class="crmtime-table">';
-        html += '<thead><tr><th>ID</th><th>Сотрудник</th><th>Заказчик</th><th>Место работы</th><th>Ставка</th><th>Дата с</th><th>Дата по</th><th>Создан</th><th>Действия</th></tr></thead><tbody>';
+        html += '<thead><tr><th>ID</th><th>Сотрудник</th><th>Заказчик</th><th>Место работы</th><th>Дата с</th><th>Дата по</th><th>Создан</th><th>Действия</th></tr></thead><tbody>';
 
         items.forEach(function (item) {
             var userText = item.fullname ? (item.fullname + ' (' + item.username + ')') : item.username;
@@ -614,7 +601,6 @@ document.addEventListener('DOMContentLoaded', function () {
             html += '<td>' + escapeHtml(userText) + '</td>';
             html += '<td>' + escapeHtml(item.customer_name) + '</td>';
             html += '<td>' + escapeHtml(item.workplace_name) + '</td>';
-            html += '<td>' + escapeHtml(item.rate) + '</td>';
             html += '<td>' + escapeHtml(item.start_date) + '</td>';
             html += '<td>' + escapeHtml(item.end_date) + '</td>';
             html += '<td>' + escapeHtml(item.createdon) + '</td>';
@@ -628,17 +614,10 @@ document.addEventListener('DOMContentLoaded', function () {
         html += '</tbody></table>';
         assignmentsList.innerHTML = '<div class="crmtime-table-wrapper">' + html + '</div>';
 
-        fillSelect(
-            timesheetAssignmentId,
-            items,
-            'id',
-            function (item) {
-                var userText = item.fullname ? item.fullname : item.username;
-                return item.id + ' — ' + userText + ' / ' + item.customer_name + ' / ' + item.workplace_name;
-            },
-            'Выберите назначение',
-            timesheetAssignmentId ? timesheetAssignmentId.value : ''
-        );
+        fillSelect(timesheetAssignmentId, items, 'id', function (item) {
+            var userText = item.fullname ? item.fullname : item.username;
+            return item.id + ' — ' + userText + ' / ' + item.customer_name + ' / ' + item.workplace_name;
+        }, 'Выберите назначение', timesheetAssignmentId ? timesheetAssignmentId.value : '');
     }
 
     function renderTimesheets(items) {
@@ -918,6 +897,47 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function renderDocuments(items) {
+        if (!documentsList) {
+            return;
+        }
+
+        if (!items || !items.length) {
+            documentsList.innerHTML = '<p>Документов пока нет.</p>';
+            return;
+        }
+
+        var html = '<table class="crmtime-table">';
+        html += '<thead><tr><th>ID</th><th>Название</th><th>Период</th><th>Заказчик</th><th>Сотрудник</th><th>Размер</th><th>Создан</th><th>Файл</th></tr></thead><tbody>';
+
+        items.forEach(function (item) {
+            var period = '';
+            if (item.date_from || item.date_to) {
+                period = (item.date_from || '—') + ' — ' + (item.date_to || '—');
+            } else {
+                period = '—';
+            }
+
+            var fileLink = item.file_path
+                ? '<a class="btn btn-success btn-sm" href="/' + String(item.file_path || '').replace(/^\/+/, '') + '" target="_blank">Открыть</a>'
+                : '<span class="crmtime-signature-empty">Нет</span>';
+
+            html += '<tr>';
+            html += '<td>' + escapeHtml(item.id) + '</td>';
+            html += '<td>' + escapeHtml(item.title || item.file_name || '') + '</td>';
+            html += '<td>' + escapeHtml(period) + '</td>';
+            html += '<td>' + escapeHtml(item.customer_name || '') + '</td>';
+            html += '<td>' + escapeHtml(item.user_name || '') + '</td>';
+            html += '<td>' + escapeHtml(formatFileSize(item.file_size)) + '</td>';
+            html += '<td>' + escapeHtml(item.createdon || '') + '</td>';
+            html += '<td>' + fileLink + '</td>';
+            html += '</tr>';
+        });
+
+        html += '</tbody></table>';
+        documentsList.innerHTML = '<div class="crmtime-table-wrapper">' + html + '</div>';
+    }
+
     function runReport() {
         request('mgr/report/summary', {
             date_from: reportDateFrom ? reportDateFrom.value : '',
@@ -936,6 +956,45 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .catch(function (error) {
                 setMessage(reportMessage, 'error', 'AJAX error: ' + error);
+            });
+    }
+
+    function downloadReportPdf() {
+        request('mgr/report/createpdf', {
+            date_from: reportDateFrom ? reportDateFrom.value : '',
+            date_to: reportDateTo ? reportDateTo.value : '',
+            customer_id: reportCustomerId ? reportCustomerId.value : '',
+            user_id: reportUserId ? reportUserId.value : ''
+        })
+            .then(function (data) {
+                if (data.success) {
+                    setMessage(reportMessage, 'success', data.message || 'PDF сформирован');
+                    if (data.object && data.object.file_url) {
+                        window.open(data.object.file_url, '_blank');
+                    }
+                    loadDocuments();
+                } else {
+                    setMessage(reportMessage, 'warning', data.message || 'Не удалось сформировать PDF');
+                }
+            })
+            .catch(function (error) {
+                setMessage(reportMessage, 'error', 'AJAX error: ' + error);
+            });
+    }
+
+    function loadDocuments() {
+        request('mgr/document/getlist')
+            .then(function (data) {
+                if (data.success && data.object && data.object.results) {
+                    setMessage(documentsMessage, '', '');
+                    renderDocuments(data.object.results);
+                } else {
+                    setMessage(documentsMessage, 'warning', data.message || 'Не удалось загрузить документы');
+                    renderDocuments([]);
+                }
+            })
+            .catch(function (error) {
+                setMessage(documentsMessage, 'error', 'AJAX error: ' + error);
             });
     }
 
@@ -1166,6 +1225,7 @@ document.addEventListener('DOMContentLoaded', function () {
         loadTimesheets();
         loadViolations();
         loadApprovals();
+        loadDocuments();
         refreshManagerCalendar();
 
         if (currentCalendarDate) {
@@ -1228,7 +1288,6 @@ document.addEventListener('DOMContentLoaded', function () {
             user_id: assignmentUserId.value,
             customer_id: assignmentCustomerId.value,
             workplace_id: assignmentWorkplaceId.value,
-            rate: assignmentRate.value,
             start_date: assignmentStartDate.value,
             end_date: assignmentEndDate.value
         };
@@ -1254,7 +1313,12 @@ document.addEventListener('DOMContentLoaded', function () {
             crm_active: employeeActive.checked ? 1 : 0,
             color: employeeColor.value,
             crm_code: employeeCode.value,
-            crm_note: employeeNote.value
+            crm_note: employeeNote.value,
+            standard_rate: employeeStandardRate.value,
+            night_coeff: employeeNightCoeff.value,
+            sunday_coeff: employeeSundayCoeff.value,
+            holiday_coeff: employeeHolidayCoeff.value,
+            home_address: employeeHomeAddress.value
         })
             .then(function (data) {
                 if (data.success) {
@@ -1470,6 +1534,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (reportRunBtn) {
         reportRunBtn.addEventListener('click', runReport);
+    }
+    if (reportPdfBtn) {
+        reportPdfBtn.addEventListener('click', downloadReportPdf);
+    }
+    if (documentsRefreshBtn) {
+        documentsRefreshBtn.addEventListener('click', loadDocuments);
     }
 
     if (calendarApplyBtn) {
