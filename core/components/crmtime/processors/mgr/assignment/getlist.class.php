@@ -37,7 +37,7 @@ class CrmTimeMgrAssignmentGetListProcessor extends modProcessor
                 'customer_name' => $customer ? $customer->get('name') : '',
                 'workplace_id' => $workplaceId,
                 'workplace_name' => $workplace ? $workplace->get('name') : '',
-                'rate' => $assignment->get('rate'),
+                'rate' => '',
                 'start_date' => $assignment->get('start_date'),
                 'end_date' => $assignment->get('end_date'),
                 'createdon' => $assignment->get('createdon'),
