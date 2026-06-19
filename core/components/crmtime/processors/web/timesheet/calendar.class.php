@@ -67,6 +67,30 @@ class CrmTimeWebTimesheetCalendarProcessor extends modProcessor
         return round($rate, 2);
     }
 
+    protected function getHoursBetween($startTime, $endTime)
+    {
+        $startTime = trim((string)$startTime);
+        $endTime = trim((string)$endTime);
+
+        if ($startTime === '' || $endTime === '') {
+            return 0;
+        }
+
+        $start = strtotime('1970-01-01 ' . $startTime);
+        $end = strtotime('1970-01-01 ' . $endTime);
+
+        if ($start === false || $end === false) {
+            return 0;
+        }
+
+        if ($end < $start) {
+            $end += 86400;
+        }
+
+        $seconds = $end - $start;
+        return round($seconds / 3600, 2);
+    }
+
     protected function getSignatureUrl($signatureFile)
     {
         $signatureFile = trim((string)$signatureFile);
@@ -137,6 +161,12 @@ class CrmTimeWebTimesheetCalendarProcessor extends modProcessor
 
             $signatureFile = (string)$timesheet->get('signature_file');
             $signatureUrl = $this->getSignatureUrl($signatureFile);
+            $hours = $this->getHoursBetween(
+                $timesheet->get('start_time'),
+                $timesheet->get('end_time')
+            );
+            $rate = $this->getEffectiveRate($userId, $timesheet);
+            $amount = round($hours * $rate, 2);
 
             $title = ($workplace ? (string)$workplace->get('name') : 'Arbeit');
             $title .= ' / ' . $this->getTariffText($timesheet);
@@ -161,7 +191,9 @@ class CrmTimeWebTimesheetCalendarProcessor extends modProcessor
                     'is_sunday' => (int)$timesheet->get('is_sunday'),
                     'is_holiday' => (int)$timesheet->get('is_holiday'),
                     'tariff_text' => $this->getTariffText($timesheet),
-                    'rate' => number_format($this->getEffectiveRate($userId, $timesheet), 2, '.', ''),
+                    'hours' => number_format($hours, 2, '.', ''),
+                    'rate' => number_format($rate, 2, '.', ''),
+                    'amount' => number_format($amount, 2, '.', ''),
                     'has_violation' => $this->modx->getCount('CrmViolation', array(
                         'timesheet_id' => (int)$timesheet->get('id'),
                     )) > 0 ? 1 : 0,
