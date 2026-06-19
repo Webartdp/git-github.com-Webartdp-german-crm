@@ -68,6 +68,7 @@ $modx->regClientStartupScript(
     )) . ';</script>'
 );
 $modx->regClientStartupScript($assetsUrl . 'js/web/cabinet.js');
+$modx->regClientStartupScript($assetsUrl . 'js/web/cabinet-hide-money.js');
 
 $calendarNotice = '';
 if (!$hasCalendarAssets) {
