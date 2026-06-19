@@ -8,7 +8,6 @@ class CrmTimeMgrAssignmentUpdateProcessor extends modProcessor
         $userId = (int)$this->getProperty('user_id');
         $customerId = (int)$this->getProperty('customer_id');
         $workplaceId = (int)$this->getProperty('workplace_id');
-        $rate = trim((string)$this->getProperty('rate'));
         $startDate = trim((string)$this->getProperty('start_date'));
         $endDate = trim((string)$this->getProperty('end_date'));
 
@@ -28,16 +27,16 @@ class CrmTimeMgrAssignmentUpdateProcessor extends modProcessor
             return $this->failure('Не выбрано место работы');
         }
 
-        if ($rate === '') {
-            return $this->failure('Укажите ставку');
-        }
-
         if ($startDate === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $startDate)) {
             return $this->failure('Дата начала должна быть в формате YYYY-MM-DD');
         }
 
         if ($endDate !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $endDate)) {
             return $this->failure('Дата окончания должна быть в формате YYYY-MM-DD');
+        }
+
+        if ($endDate !== '' && $startDate > $endDate) {
+            return $this->failure('Дата окончания не может быть раньше даты начала');
         }
 
         $user = $this->modx->getObject('modUser', array('id' => $userId));
@@ -55,6 +54,10 @@ class CrmTimeMgrAssignmentUpdateProcessor extends modProcessor
             return $this->failure('Место работы не найдено');
         }
 
+        if ((int)$workplace->get('customer_id') !== $customerId) {
+            return $this->failure('Место работы не принадлежит выбранному заказчику');
+        }
+
         /** @var CrmAssignment $assignment */
         $assignment = $this->modx->getObject('CrmAssignment', array(
             'id' => $id,
@@ -69,9 +72,9 @@ class CrmTimeMgrAssignmentUpdateProcessor extends modProcessor
         $assignment->set('user_id', $userId);
         $assignment->set('customer_id', $customerId);
         $assignment->set('workplace_id', $workplaceId);
-        $assignment->set('rate', $rate);
+        $assignment->set('rate', 0);
         $assignment->set('start_date', $startDate);
-        $assignment->set('end_date', $endDate);
+        $assignment->set('end_date', $endDate !== '' ? $endDate : null);
 
         if (!$assignment->save()) {
             return $this->failure('Не удалось обновить назначение');
