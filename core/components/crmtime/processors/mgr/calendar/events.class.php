@@ -24,6 +24,88 @@ class CrmTimeMgrCalendarEventsProcessor extends modProcessor
         return array();
     }
 
+    protected function getUserTariffs($userId)
+    {
+        $profile = $this->modx->getObject('modUserProfile', array(
+            'internalKey' => (int)$userId,
+        ));
+
+        $extended = $this->getExtendedArray($profile);
+
+        $standardRate = isset($extended['standard_rate']) ? str_replace(',', '.', trim((string)$extended['standard_rate'])) : '0';
+        $nightCoeff = isset($extended['night_coeff']) ? str_replace(',', '.', trim((string)$extended['night_coeff'])) : '1';
+        $sundayCoeff = isset($extended['sunday_coeff']) ? str_replace(',', '.', trim((string)$extended['sunday_coeff'])) : '1';
+        $holidayCoeff = isset($extended['holiday_coeff']) ? str_replace(',', '.', trim((string)$extended['holiday_coeff'])) : '1';
+
+        return array(
+            'standard_rate' => is_numeric($standardRate) ? (float)$standardRate : 0,
+            'night_coeff' => is_numeric($nightCoeff) && (float)$nightCoeff > 0 ? (float)$nightCoeff : 1,
+            'sunday_coeff' => is_numeric($sundayCoeff) && (float)$sundayCoeff > 0 ? (float)$sundayCoeff : 1,
+            'holiday_coeff' => is_numeric($holidayCoeff) && (float)$holidayCoeff > 0 ? (float)$holidayCoeff : 1,
+        );
+    }
+
+    protected function getEffectiveRate($userId, CrmTimesheet $timesheet)
+    {
+        $tariffs = $this->getUserTariffs($userId);
+
+        $rate = (float)$tariffs['standard_rate'];
+
+        if ((int)$timesheet->get('is_night') === 1) {
+            $rate = $rate * (float)$tariffs['night_coeff'];
+        }
+
+        if ((int)$timesheet->get('is_sunday') === 1) {
+            $rate = $rate * (float)$tariffs['sunday_coeff'];
+        }
+
+        if ((int)$timesheet->get('is_holiday') === 1) {
+            $rate = $rate * (float)$tariffs['holiday_coeff'];
+        }
+
+        return round($rate, 2);
+    }
+
+    protected function getHoursBetween($startTime, $endTime)
+    {
+        $startTime = trim((string)$startTime);
+        $endTime = trim((string)$endTime);
+
+        if ($startTime === '' || $endTime === '') {
+            return 0;
+        }
+
+        $start = strtotime('1970-01-01 ' . $startTime);
+        $end = strtotime('1970-01-01 ' . $endTime);
+
+        if ($start === false || $end === false) {
+            return 0;
+        }
+
+        if ($end < $start) {
+            $end += 86400;
+        }
+
+        return round(($end - $start) / 3600, 2);
+    }
+
+    protected function getTariffText(CrmTimesheet $timesheet)
+    {
+        $flags = array();
+
+        if ((int)$timesheet->get('is_night') === 1) {
+            $flags[] = 'Ночь';
+        }
+        if ((int)$timesheet->get('is_sunday') === 1) {
+            $flags[] = 'Воскресенье';
+        }
+        if ((int)$timesheet->get('is_holiday') === 1) {
+            $flags[] = 'Праздник';
+        }
+
+        return $flags ? implode(', ', $flags) : 'Стандарт';
+    }
+
     protected function getStatusPrefix($status)
     {
         switch ($status) {
@@ -73,6 +155,16 @@ class CrmTimeMgrCalendarEventsProcessor extends modProcessor
         return $this->getStatusFallbackColor($status, $hasViolation);
     }
 
+    protected function getSignatureUrl($signatureFile)
+    {
+        $signatureFile = trim((string)$signatureFile);
+        if ($signatureFile === '') {
+            return '';
+        }
+
+        return '/' . ltrim($signatureFile, '/');
+    }
+
     public function process()
     {
         $start = substr(trim((string)$this->getProperty('start')), 0, 10);
@@ -117,15 +209,12 @@ class CrmTimeMgrCalendarEventsProcessor extends modProcessor
             if ($filterUserId > 0 && $filterUserId !== $userId) {
                 continue;
             }
-
             if ($filterCustomerId > 0 && $filterCustomerId !== $customerId) {
                 continue;
             }
-
             if ($filterWorkplaceId > 0 && $filterWorkplaceId !== $workplaceId) {
                 continue;
             }
-
             if ($filterStatus !== '' && $filterStatus !== $status) {
                 continue;
             }
@@ -150,8 +239,20 @@ class CrmTimeMgrCalendarEventsProcessor extends modProcessor
                 $userName = (string)$user->get('username');
             }
 
+            $signatureFile = (string)$timesheet->get('signature_file');
+            $signatureUrl = $this->getSignatureUrl($signatureFile);
+            $hasSignature = $signatureUrl !== '' ? 1 : 0;
+
+            $tariffText = $this->getTariffText($timesheet);
+            $hours = $this->getHoursBetween(
+                $timesheet->get('start_time'),
+                $timesheet->get('end_time')
+            );
+            $rate = $this->getEffectiveRate($userId, $timesheet);
+            $amount = round($hours * $rate, 2);
+
             $title = $this->getStatusPrefix($status) . $userName;
-            if ((int)$timesheet->get('is_signed') === 1) {
+            if ($hasSignature) {
                 $title .= ' ✍';
             }
             if ($workplace) {
@@ -159,6 +260,7 @@ class CrmTimeMgrCalendarEventsProcessor extends modProcessor
             } elseif ($customer) {
                 $title .= ($title !== '' ? ' / ' : '') . $customer->get('name');
             }
+            $title .= ($title !== '' ? ' / ' : '') . $tariffText;
 
             if ($title === '') {
                 $title = 'Запись #' . (int)$timesheet->get('id');
@@ -186,17 +288,26 @@ class CrmTimeMgrCalendarEventsProcessor extends modProcessor
                     'customer_name' => $customer ? $customer->get('name') : '',
                     'workplace_id' => $workplaceId,
                     'workplace_name' => $workplace ? $workplace->get('name') : '',
+                    'workplace_address' => $workplace ? $workplace->get('address') : '',
                     'status' => $status,
                     'has_violation' => $hasViolation,
                     'admin_comment' => $timesheet->get('admin_comment'),
                     'work_date' => $timesheet->get('work_date'),
                     'start_time' => $timesheet->get('start_time'),
                     'end_time' => $timesheet->get('end_time'),
+                    'is_night' => (int)$timesheet->get('is_night'),
+                    'is_sunday' => (int)$timesheet->get('is_sunday'),
+                    'is_holiday' => (int)$timesheet->get('is_holiday'),
+                    'tariff_text' => $tariffText,
+                    'hours' => number_format($hours, 2, '.', ''),
+                    'rate' => number_format($rate, 2, '.', ''),
+                    'amount' => number_format($amount, 2, '.', ''),
                     'color' => $calendarColor,
-                    'is_signed' => (int)$timesheet->get('is_signed'),
+                    'createdon' => (string)$timesheet->get('createdon'),
+                    'is_signed' => $hasSignature,
                     'signed_on' => (string)$timesheet->get('signed_on'),
                     'signed_name' => (string)$timesheet->get('signed_name'),
-                    'signature_url' => trim((string)$timesheet->get('signature_file')) !== '' ? '/' . ltrim((string)$timesheet->get('signature_file'), '/') : '',
+                    'signature_url' => $signatureUrl,
                 ),
             );
         }
