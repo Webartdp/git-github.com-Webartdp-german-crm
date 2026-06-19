@@ -132,10 +132,6 @@
                     </div>
 
                     <div class="crmtime-form-row">
-                        <input type="number" step="0.01" id="crmtime-assignment-rate" placeholder="Ставка за час">
-                    </div>
-
-                    <div class="crmtime-form-row">
                         <label for="crmtime-assignment-start-date">Дата начала</label>
                         <input type="date" id="crmtime-assignment-start-date">
                     </div>
@@ -156,85 +152,85 @@
                 </div>
             </div>
 
-        <div class="crmtime-tab-panel" data-tab-panel="employees">
-    <div class="crmtime-card">
-        <h2 id="crmtime-employee-form-title">Сотрудники CRM</h2>
+            <div class="crmtime-tab-panel" data-tab-panel="employees">
+                <div class="crmtime-card">
+                    <h2 id="crmtime-employee-form-title">Сотрудники CRM</h2>
 
-        <input type="hidden" id="crmtime-employee-id" value="">
+                    <input type="hidden" id="crmtime-employee-id" value="">
 
-        <div class="crmtime-form-row">
-            <label for="crmtime-employee-username">Логин</label>
-            <input type="text" id="crmtime-employee-username" readonly>
-        </div>
+                    <div class="crmtime-form-row">
+                        <label for="crmtime-employee-username">Логин</label>
+                        <input type="text" id="crmtime-employee-username" readonly>
+                    </div>
 
-        <div class="crmtime-form-row">
-            <label for="crmtime-employee-fullname">Имя</label>
-            <input type="text" id="crmtime-employee-fullname" readonly>
-        </div>
+                    <div class="crmtime-form-row">
+                        <label for="crmtime-employee-fullname">Имя</label>
+                        <input type="text" id="crmtime-employee-fullname" readonly>
+                    </div>
 
-        <div class="crmtime-form-row">
-            <label for="crmtime-employee-email">Email</label>
-            <input type="text" id="crmtime-employee-email" readonly>
-        </div>
+                    <div class="crmtime-form-row">
+                        <label for="crmtime-employee-email">Email</label>
+                        <input type="text" id="crmtime-employee-email" readonly>
+                    </div>
 
-        <div class="crmtime-form-row">
-            <label>
-                <input type="checkbox" id="crmtime-employee-active" checked>
-                Активен в CRM
-            </label>
-        </div>
+                    <div class="crmtime-form-row">
+                        <label>
+                            <input type="checkbox" id="crmtime-employee-active" checked>
+                            Активен в CRM
+                        </label>
+                    </div>
 
-        <div class="crmtime-form-row">
-            <label for="crmtime-employee-color">Цвет в календаре</label>
-            <input type="color" id="crmtime-employee-color" value="#3788d8">
-        </div>
+                    <div class="crmtime-form-row">
+                        <label for="crmtime-employee-color">Цвет в календаре</label>
+                        <input type="color" id="crmtime-employee-color" value="#3788d8">
+                    </div>
 
-        <div class="crmtime-form-row">
-            <label for="crmtime-employee-code">Код сотрудника</label>
-            <input type="text" id="crmtime-employee-code" placeholder="Например: EMP-001">
-        </div>
+                    <div class="crmtime-form-row">
+                        <label for="crmtime-employee-code">Код сотрудника</label>
+                        <input type="text" id="crmtime-employee-code" placeholder="Например: EMP-001">
+                    </div>
 
-        <div class="crmtime-form-row">
-            <label for="crmtime-employee-note">Заметка CRM</label>
-            <textarea id="crmtime-employee-note" placeholder="Внутренняя заметка по сотруднику"></textarea>
-        </div>
+                    <div class="crmtime-form-row">
+                        <label for="crmtime-employee-note">Заметка CRM</label>
+                        <textarea id="crmtime-employee-note" placeholder="Внутренняя заметка по сотруднику"></textarea>
+                    </div>
 
-        <hr>
+                    <hr>
 
-        <div class="crmtime-form-row">
-            <label for="crmtime-employee-standard-rate">СТАНДАРТНАЯ ОПЛАТА</label>
-            <input type="number" step="0.01" min="0" id="crmtime-employee-standard-rate" placeholder="Например: 25.00">
-        </div>
+                    <div class="crmtime-form-row">
+                        <label for="crmtime-employee-standard-rate">СТАНДАРТНАЯ ОПЛАТА</label>
+                        <input type="number" step="0.01" min="0" id="crmtime-employee-standard-rate" placeholder="Например: 25.00">
+                    </div>
 
-        <div class="crmtime-form-row">
-            <label for="crmtime-employee-night-coeff">НОЧНОЙ ТАРИФ (коэффициент)</label>
-            <input type="number" step="0.01" min="0" id="crmtime-employee-night-coeff" placeholder="Например: 1.20">
-        </div>
+                    <div class="crmtime-form-row">
+                        <label for="crmtime-employee-night-coeff">НОЧНОЙ ТАРИФ (коэффициент)</label>
+                        <input type="number" step="0.01" min="0" id="crmtime-employee-night-coeff" placeholder="Например: 1.20">
+                    </div>
 
-        <div class="crmtime-form-row">
-            <label for="crmtime-employee-sunday-coeff">Воскресный (коэффициент)</label>
-            <input type="number" step="0.01" min="0" id="crmtime-employee-sunday-coeff" placeholder="Например: 1.50">
-        </div>
+                    <div class="crmtime-form-row">
+                        <label for="crmtime-employee-sunday-coeff">Воскресный (коэффициент)</label>
+                        <input type="number" step="0.01" min="0" id="crmtime-employee-sunday-coeff" placeholder="Например: 1.50">
+                    </div>
 
-        <div class="crmtime-form-row">
-            <label for="crmtime-employee-holiday-coeff">Праздничный (коэффициент)</label>
-            <input type="number" step="0.01" min="0" id="crmtime-employee-holiday-coeff" placeholder="Например: 2.00">
-        </div>
+                    <div class="crmtime-form-row">
+                        <label for="crmtime-employee-holiday-coeff">Праздничный (коэффициент)</label>
+                        <input type="number" step="0.01" min="0" id="crmtime-employee-holiday-coeff" placeholder="Например: 2.00">
+                    </div>
 
-        <div class="crmtime-form-row">
-            <label for="crmtime-employee-home-address">Место жительства сотрудника</label>
-            <textarea id="crmtime-employee-home-address" placeholder="Адрес проживания сотрудника"></textarea>
-        </div>
+                    <div class="crmtime-form-row">
+                        <label for="crmtime-employee-home-address">Место жительства сотрудника</label>
+                        <textarea id="crmtime-employee-home-address" placeholder="Адрес проживания сотрудника"></textarea>
+                    </div>
 
-        <div class="crmtime-form-row">
-            <button type="button" class="btn btn-success" id="crmtime-save-employee-btn">Сохранить CRM-настройки</button>
-            <button type="button" class="btn" id="crmtime-cancel-employee-btn" style="display:none;">Отменить редактирование</button>
-        </div>
+                    <div class="crmtime-form-row">
+                        <button type="button" class="btn btn-success" id="crmtime-save-employee-btn">Сохранить CRM-настройки</button>
+                        <button type="button" class="btn" id="crmtime-cancel-employee-btn" style="display:none;">Отменить редактирование</button>
+                    </div>
 
-        <div id="crmtime-employee-message" class="crmtime-message" style="display:none;"></div>
-        <div id="crmtime-employees-list"></div>
-    </div>
-</div>
+                    <div id="crmtime-employee-message" class="crmtime-message" style="display:none;"></div>
+                    <div id="crmtime-employees-list"></div>
+                </div>
+            </div>
 
             <div class="crmtime-tab-panel" data-tab-panel="timesheets">
                 <div class="crmtime-card">
@@ -262,6 +258,27 @@
                     <div class="crmtime-form-row">
                         <label for="crmtime-timesheet-end-time">Время окончания</label>
                         <input type="time" id="crmtime-timesheet-end-time">
+                    </div>
+
+                    <div class="crmtime-form-row">
+                        <label>
+                            <input type="checkbox" id="crmtime-timesheet-is-night">
+                            Ночь
+                        </label>
+                    </div>
+
+                    <div class="crmtime-form-row">
+                        <label>
+                            <input type="checkbox" id="crmtime-timesheet-is-sunday">
+                            Воскресенье
+                        </label>
+                    </div>
+
+                    <div class="crmtime-form-row">
+                        <label>
+                            <input type="checkbox" id="crmtime-timesheet-is-holiday">
+                            Праздник
+                        </label>
                     </div>
 
                     <div class="crmtime-form-row">
