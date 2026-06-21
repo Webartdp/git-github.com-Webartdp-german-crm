@@ -12,6 +12,31 @@ class CrmTimeMgrApprovalGetListProcessor extends modProcessor
         return '/' . ltrim($signatureFile, '/');
     }
 
+    protected function hasSignature(CrmTimesheet $timesheet, $signatureUrl)
+    {
+        if (trim((string)$signatureUrl) !== '') {
+            return 1;
+        }
+
+        if (trim((string)$timesheet->get('signature_file')) !== '') {
+            return 1;
+        }
+
+        if (trim((string)$timesheet->get('signed_on')) !== '') {
+            return 1;
+        }
+
+        if (trim((string)$timesheet->get('signed_name')) !== '') {
+            return 1;
+        }
+
+        if ((int)$timesheet->get('is_signed') === 1) {
+            return 1;
+        }
+
+        return 0;
+    }
+
     public function process()
     {
         $c = $this->modx->newQuery('CrmTimesheet');
@@ -50,6 +75,7 @@ class CrmTimeMgrApprovalGetListProcessor extends modProcessor
 
             $signatureFile = (string)$timesheet->get('signature_file');
             $signatureUrl = $this->getSignatureUrl($signatureFile);
+            $hasSignature = $this->hasSignature($timesheet, $signatureUrl);
 
             $userName = '';
             if ($profile && trim((string)$profile->get('fullname')) !== '') {
@@ -88,7 +114,7 @@ class CrmTimeMgrApprovalGetListProcessor extends modProcessor
                 'signature_url' => $signatureUrl,
                 'signed_on' => (string)$timesheet->get('signed_on'),
                 'signed_name' => (string)$timesheet->get('signed_name'),
-                'is_signed' => $signatureUrl !== '' ? 1 : 0,
+                'is_signed' => $hasSignature,
             );
         }
 
