@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var modalState = {
         entity: '',
         id: '',
+        mode: 'edit',
         related: {}
     };
 
@@ -142,6 +143,7 @@ document.addEventListener('DOMContentLoaded', function () {
             '.crmtime-modal-note{padding:10px 12px;border-radius:10px;background:#f8fafc;color:#334155;font-size:13px;}' +
             '.crmtime-modal-message{display:none;margin-top:14px;}' +
             '.crmtime-modal-message.is-visible{display:block;}' +
+            '.crmtime-modal-add-row{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:14px;}' +
             '@media (max-width: 768px){.crmtime-modal-grid{grid-template-columns:1fr;}.crmtime-modal{width:100%;}}';
         document.head.appendChild(style);
     }
@@ -179,6 +181,7 @@ document.addEventListener('DOMContentLoaded', function () {
             backdrop.classList.remove('is-open');
             modalState.entity = '';
             modalState.id = '';
+            modalState.mode = 'edit';
             modalState.related = {};
             setModalMessage('', '');
         }
@@ -248,10 +251,11 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function renderCustomerModal(item) {
+    function renderCustomerModal(item, mode) {
         modalState.entity = 'customer';
-        modalState.id = item.id;
-        openModal('Редактирование заказчика #' + item.id, '' +
+        modalState.id = item.id || '';
+        modalState.mode = mode || 'edit';
+        openModal((modalState.mode === 'create' ? 'Добавить заказчика' : 'Редактирование заказчика #' + item.id), '' +
             '<div class="crmtime-modal-grid">' +
                 '<div class="crmtime-modal-field crmtime-modal-field--full">' +
                     '<label for="crm-modal-customer-name">Название</label>' +
@@ -269,11 +273,12 @@ document.addEventListener('DOMContentLoaded', function () {
         );
     }
 
-    function renderWorkplaceModal(item, customers) {
+    function renderWorkplaceModal(item, customers, mode) {
         modalState.entity = 'workplace';
-        modalState.id = item.id;
+        modalState.id = item.id || '';
+        modalState.mode = mode || 'edit';
         modalState.related.customers = customers || [];
-        openModal('Редактирование места работы #' + item.id, '' +
+        openModal((modalState.mode === 'create' ? 'Добавить место работы' : 'Редактирование места работы #' + item.id), '' +
             '<div class="crmtime-modal-grid">' +
                 '<div class="crmtime-modal-field">' +
                     '<label for="crm-modal-workplace-customer">Заказчик</label>' +
@@ -294,14 +299,15 @@ document.addEventListener('DOMContentLoaded', function () {
         );
     }
 
-    function renderAssignmentModal(item, users, customers, workplaces) {
+    function renderAssignmentModal(item, users, customers, workplaces, mode) {
         modalState.entity = 'assignment';
-        modalState.id = item.id;
+        modalState.id = item.id || '';
+        modalState.mode = mode || 'edit';
         modalState.related.users = users || [];
         modalState.related.customers = customers || [];
         modalState.related.workplaces = workplaces || [];
 
-        openModal('Редактирование назначения #' + item.id, '' +
+        openModal((modalState.mode === 'create' ? 'Добавить назначение' : 'Редактирование назначения #' + item.id), '' +
             '<div class="crmtime-modal-grid">' +
                 '<div class="crmtime-modal-field">' +
                     '<label for="crm-modal-assignment-user">Сотрудник</label>' +
@@ -355,11 +361,33 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function renderEmployeeModal(item) {
+    function renderEmployeeModal(item, users, mode) {
         modalState.entity = 'employee';
-        modalState.id = item.id;
-        openModal('Настройка сотрудника #' + item.id, '' +
+        modalState.id = item.id || '';
+        modalState.mode = mode || 'edit';
+        modalState.related.users = users || [];
+
+        var userPicker = '';
+        if (modalState.mode === 'create') {
+            userPicker = '' +
+                '<div class="crmtime-modal-field crmtime-modal-field--full">' +
+                    '<label for="crm-modal-employee-user-id">MODX пользователь</label>' +
+                    '<select id="crm-modal-employee-user-id">' +
+                        '<option value="">Выберите пользователя</option>' +
+                        buildOptions(users, 'id', function (row) {
+                            var text = row.username || '';
+                            if (row.fullname) {
+                                text += ' — ' + row.fullname;
+                            }
+                            return row.id + ' — ' + text;
+                        }, item.id || '') +
+                    '</select>' +
+                '</div>';
+        }
+
+        openModal((modalState.mode === 'create' ? 'Добавить сотрудника в CRM' : 'Настройка сотрудника #' + item.id), '' +
             '<div class="crmtime-modal-grid">' +
+                userPicker +
                 '<div class="crmtime-modal-field">' +
                     '<label>Логин</label>' +
                     '<input type="text" value="' + escapeHtml(item.username || '') + '" readonly>' +
@@ -377,7 +405,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     '<input type="color" id="crm-modal-employee-color" value="' + escapeHtml(item.color || '#3788d8') + '">' +
                 '</div>' +
                 '<div class="crmtime-modal-field">' +
-                    '<label class="crmtime-modal-checkbox"><input type="checkbox" id="crm-modal-employee-active"' + (parseInt(item.crm_active, 10) === 1 ? ' checked' : '') + '> Активен в CRM</label>' +
+                    '<label class="crmtime-modal-checkbox"><input type="checkbox" id="crm-modal-employee-active"' + (parseInt(item.crm_active || 1, 10) === 1 ? ' checked' : '') + '> Активен в CRM</label>' +
                 '</div>' +
                 '<div class="crmtime-modal-field">' +
                     '<label for="crm-modal-employee-code">Код сотрудника</label>' +
@@ -411,11 +439,12 @@ document.addEventListener('DOMContentLoaded', function () {
         );
     }
 
-    function renderTimesheetModal(item, assignments) {
+    function renderTimesheetModal(item, assignments, mode) {
         modalState.entity = 'timesheet';
-        modalState.id = item.id;
+        modalState.id = item.id || '';
+        modalState.mode = mode || 'edit';
         modalState.related.assignments = assignments || [];
-        openModal('Редактирование записи времени #' + item.id, '' +
+        openModal((modalState.mode === 'create' ? 'Добавить запись времени' : 'Редактирование записи времени #' + item.id), '' +
             '<div class="crmtime-modal-grid">' +
                 '<div class="crmtime-modal-field crmtime-modal-field--full">' +
                     '<label for="crm-modal-timesheet-assignment">Назначение</label>' +
@@ -456,10 +485,14 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!item) {
                 throw new Error('Заказчик не найден');
             }
-            renderCustomerModal(item);
+            renderCustomerModal(item, 'edit');
         }).catch(function (error) {
             alert(error.message || error);
         });
+    }
+
+    function openCreateCustomer() {
+        renderCustomerModal({ id: '', name: '', code: '', description: '' }, 'create');
     }
 
     function loadWorkplaceEdit(id) {
@@ -471,7 +504,15 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!item) {
                 throw new Error('Место работы не найдено');
             }
-            renderWorkplaceModal(item, result[1]);
+            renderWorkplaceModal(item, result[1], 'edit');
+        }).catch(function (error) {
+            alert(error.message || error);
+        });
+    }
+
+    function openCreateWorkplace() {
+        fetchResults('mgr/customer/getlist').then(function (customers) {
+            renderWorkplaceModal({ id: '', customer_id: '', name: '', address: '' }, customers, 'create');
         }).catch(function (error) {
             alert(error.message || error);
         });
@@ -488,7 +529,19 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!item) {
                 throw new Error('Назначение не найдено');
             }
-            renderAssignmentModal(item, result[1], result[2], result[3]);
+            renderAssignmentModal(item, result[1], result[2], result[3], 'edit');
+        }).catch(function (error) {
+            alert(error.message || error);
+        });
+    }
+
+    function openCreateAssignment() {
+        Promise.all([
+            fetchResults('mgr/user/getlist'),
+            fetchResults('mgr/customer/getlist'),
+            fetchResults('mgr/workplace/getlist')
+        ]).then(function (result) {
+            renderAssignmentModal({ id: '', user_id: '', customer_id: '', workplace_id: '', start_date: '', end_date: '' }, result[0], result[1], result[2], 'create');
         }).catch(function (error) {
             alert(error.message || error);
         });
@@ -500,7 +553,18 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!item) {
                 throw new Error('Сотрудник не найден');
             }
-            renderEmployeeModal(item);
+            renderEmployeeModal(item, items, 'edit');
+        }).catch(function (error) {
+            alert(error.message || error);
+        });
+    }
+
+    function openCreateEmployee() {
+        fetchResults('mgr/user/getlist').then(function (items) {
+            renderEmployeeModal({
+                id: '', username: '', fullname: '', email: '', crm_active: 1, color: '#3788d8', crm_code: '', crm_note: '',
+                standard_rate: '0.00', night_coeff: '1.00', sunday_coeff: '1.00', holiday_coeff: '1.00', home_address: ''
+            }, items, 'create');
         }).catch(function (error) {
             alert(error.message || error);
         });
@@ -515,7 +579,15 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!item) {
                 throw new Error('Запись времени не найдена');
             }
-            renderTimesheetModal(item, result[1]);
+            renderTimesheetModal(item, result[1], 'edit');
+        }).catch(function (error) {
+            alert(error.message || error);
+        });
+    }
+
+    function openCreateTimesheet() {
+        fetchResults('mgr/assignment/getlist').then(function (assignments) {
+            renderTimesheetModal({ id: '', assignment_id: '', work_date: '', start_time: '', end_time: '', is_night: 0, is_sunday: 0, is_holiday: 0 }, assignments, 'create');
         }).catch(function (error) {
             alert(error.message || error);
         });
@@ -523,20 +595,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function saveModal() {
         var action = '';
-        var payload = { id: modalState.id };
+        var payload = {};
 
         if (modalState.entity === 'customer') {
-            action = 'mgr/customer/update';
+            action = modalState.mode === 'create' ? 'mgr/customer/create' : 'mgr/customer/update';
+            payload.id = modalState.id;
             payload.name = document.getElementById('crm-modal-customer-name').value;
             payload.code = document.getElementById('crm-modal-customer-code').value;
             payload.description = document.getElementById('crm-modal-customer-description').value;
         } else if (modalState.entity === 'workplace') {
-            action = 'mgr/workplace/update';
+            action = modalState.mode === 'create' ? 'mgr/workplace/create' : 'mgr/workplace/update';
+            payload.id = modalState.id;
             payload.customer_id = document.getElementById('crm-modal-workplace-customer').value;
             payload.name = document.getElementById('crm-modal-workplace-name').value;
             payload.address = document.getElementById('crm-modal-workplace-address').value;
         } else if (modalState.entity === 'assignment') {
-            action = 'mgr/assignment/update';
+            action = modalState.mode === 'create' ? 'mgr/assignment/create' : 'mgr/assignment/update';
+            payload.id = modalState.id;
             payload.user_id = document.getElementById('crm-modal-assignment-user').value;
             payload.customer_id = document.getElementById('crm-modal-assignment-customer').value;
             payload.workplace_id = document.getElementById('crm-modal-assignment-workplace').value;
@@ -544,6 +619,7 @@ document.addEventListener('DOMContentLoaded', function () {
             payload.end_date = document.getElementById('crm-modal-assignment-end-date').value;
         } else if (modalState.entity === 'employee') {
             action = 'mgr/employee/update';
+            payload.id = modalState.mode === 'create' ? document.getElementById('crm-modal-employee-user-id').value : modalState.id;
             payload.crm_active = document.getElementById('crm-modal-employee-active').checked ? 1 : 0;
             payload.color = document.getElementById('crm-modal-employee-color').value;
             payload.crm_code = document.getElementById('crm-modal-employee-code').value;
@@ -554,7 +630,8 @@ document.addEventListener('DOMContentLoaded', function () {
             payload.holiday_coeff = document.getElementById('crm-modal-employee-holiday-coeff').value;
             payload.home_address = document.getElementById('crm-modal-employee-home-address').value;
         } else if (modalState.entity === 'timesheet') {
-            action = 'mgr/timesheet/update';
+            action = modalState.mode === 'create' ? 'mgr/timesheet/create' : 'mgr/timesheet/update';
+            payload.id = modalState.id;
             payload.assignment_id = document.getElementById('crm-modal-timesheet-assignment').value;
             payload.work_date = document.getElementById('crm-modal-timesheet-date').value;
             payload.start_time = document.getElementById('crm-modal-timesheet-start').value;
@@ -621,9 +698,54 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function hideInlineControl(id) {
+        var el = document.getElementById(id);
+        if (!el) {
+            return;
+        }
+        var row = el.closest('.crmtime-form-row');
+        if (row) {
+            row.style.display = 'none';
+            return;
+        }
+        el.style.display = 'none';
+    }
+
+    function hideInlineForms() {
+        [
+            'crmtime-customer-id','crmtime-customer-name','crmtime-customer-code','crmtime-customer-description','crmtime-save-customer-btn','crmtime-cancel-customer-btn',
+            'crmtime-workplace-id','crmtime-workplace-customer-id','crmtime-workplace-name','crmtime-workplace-address','crmtime-save-workplace-btn','crmtime-cancel-workplace-btn',
+            'crmtime-assignment-id','crmtime-assignment-user-id','crmtime-assignment-customer-id','crmtime-assignment-workplace-id','crmtime-assignment-start-date','crmtime-assignment-end-date','crmtime-save-assignment-btn','crmtime-cancel-assignment-btn',
+            'crmtime-employee-id','crmtime-employee-username','crmtime-employee-fullname','crmtime-employee-email','crmtime-employee-active','crmtime-employee-color','crmtime-employee-code','crmtime-employee-note','crmtime-employee-standard-rate','crmtime-employee-night-coeff','crmtime-employee-sunday-coeff','crmtime-employee-holiday-coeff','crmtime-employee-home-address','crmtime-save-employee-btn','crmtime-cancel-employee-btn',
+            'crmtime-timesheet-id','crmtime-timesheet-assignment-id','crmtime-timesheet-work-date','crmtime-timesheet-start-time','crmtime-timesheet-end-time','crmtime-timesheet-is-night','crmtime-timesheet-is-sunday','crmtime-timesheet-is-holiday','crmtime-save-timesheet-btn','crmtime-cancel-timesheet-btn'
+        ].forEach(hideInlineControl);
+    }
+
+    function insertAddButtonBefore(listId, buttonId, text, handler) {
+        var listEl = document.getElementById(listId);
+        if (!listEl || document.getElementById(buttonId)) {
+            return;
+        }
+
+        var row = document.createElement('div');
+        row.className = 'crmtime-modal-add-row';
+        row.id = buttonId + '-row';
+        row.innerHTML = '<button type="button" class="btn btn-primary" id="' + buttonId + '">' + escapeHtml(text) + '</button>';
+
+        listEl.parentNode.insertBefore(row, listEl);
+        document.getElementById(buttonId).addEventListener('click', handler);
+    }
+
     injectStyles();
     createModalRoot();
     restoreActiveTabName();
+    hideInlineForms();
+
+    insertAddButtonBefore('crmtime-customers-list', 'crmtime-add-customer-modal-btn', 'Добавить заказчика', openCreateCustomer);
+    insertAddButtonBefore('crmtime-workplaces-list', 'crmtime-add-workplace-modal-btn', 'Добавить место работы', openCreateWorkplace);
+    insertAddButtonBefore('crmtime-assignments-list', 'crmtime-add-assignment-modal-btn', 'Добавить назначение', openCreateAssignment);
+    insertAddButtonBefore('crmtime-employees-list', 'crmtime-add-employee-modal-btn', 'Добавить сотрудника в CRM', openCreateEmployee);
+    insertAddButtonBefore('crmtime-timesheets-list', 'crmtime-add-timesheet-modal-btn', 'Добавить запись времени', openCreateTimesheet);
 
     document.addEventListener('click', onEditClick, true);
     document.getElementById('crmtime-edit-modal-save').addEventListener('click', saveModal);
