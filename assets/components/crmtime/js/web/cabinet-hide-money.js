@@ -35,7 +35,6 @@ document.addEventListener('DOMContentLoaded', function () {
             '.crmtime-cabinet__hero-stat-label{font-size:.78rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:rgba(238,243,255,.72);margin-bottom:.35rem;}' +
             '.crmtime-cabinet__hero-stat-value{font-size:1.55rem;font-weight:800;letter-spacing:-.04em;color:#fff;line-height:1;}' +
             '.crmtime-cabinet__hero-stat-text{margin-top:.35rem;font-size:.84rem;color:rgba(242,246,255,.82);}' +
-            '.crmtime-cabinet__sidebar .card-body{position:relative;}' +
             '.crmtime-cabinet__nav .nav-link{padding-left:1rem;}' +
             '.crmtime-cabinet__nav .nav-link::before{content:attr(data-icon);display:inline-flex;align-items:center;justify-content:center;width:1.9rem;height:1.9rem;border-radius:.8rem;background:rgba(255,255,255,.12);box-shadow:none;color:#fff;font-size:1rem;font-weight:700;}' +
             '.crmtime-cabinet__nav .nav-link:hover::before,.crmtime-cabinet__nav .nav-link:focus::before{background:rgba(255,255,255,.2);box-shadow:none;}' +
@@ -75,12 +74,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 var text = normalizeText(cell.textContent);
                 if (text === 'satz' || text === 'betrag') {
                     hiddenIndexes.push(index);
-                    cell.remove();
                 }
             });
         }
 
         if (hiddenIndexes.length) {
+            hiddenIndexes.slice().sort(function (a, b) { return b - a; }).forEach(function (index) {
+                if (headRow && headRow.children[index]) {
+                    headRow.children[index].remove();
+                }
+            });
+
             Array.prototype.forEach.call(table.querySelectorAll('tbody tr'), function (row) {
                 hiddenIndexes.slice().sort(function (a, b) { return b - a; }).forEach(function (index) {
                     if (row.children[index]) {
@@ -146,8 +150,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!container) {
             return 0;
         }
-        var rows = container.querySelectorAll('tbody tr');
-        return rows ? rows.length : 0;
+        return container.querySelectorAll('tbody tr').length;
     }
 
     function ensureHeroBlock() {
@@ -197,9 +200,7 @@ document.addEventListener('DOMContentLoaded', function () {
         assignmentsValue.textContent = String(countBodyRows('crmtime-web-assignments-list'));
         timesheetsValue.textContent = String(countBodyRows('crmtime-web-timesheets-list'));
         violationsValue.textContent = String(countBodyRows('crmtime-web-violations-list'));
-
-        var signedCount = document.querySelectorAll('#crmtime-web-timesheets-list a.btn-outline-success').length;
-        signaturesValue.textContent = String(signedCount);
+        signaturesValue.textContent = String(document.querySelectorAll('#crmtime-web-timesheets-list a.btn-outline-success').length);
     }
 
     function buildStatusBadgeMarkup(text) {
@@ -264,7 +265,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function run() {
+    function runEnhancements() {
         injectEnhancementStyles();
         decorateNav();
         decoratePanels();
@@ -278,14 +279,7 @@ document.addEventListener('DOMContentLoaded', function () {
         updateHeroStats();
     }
 
-    run();
-
-    var observer = new MutationObserver(function () {
-        run();
-    });
-
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
+    runEnhancements();
+    window.setTimeout(runEnhancements, 300);
+    window.setTimeout(runEnhancements, 1200);
 });
