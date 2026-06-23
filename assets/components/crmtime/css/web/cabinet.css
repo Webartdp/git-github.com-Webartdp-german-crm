@@ -215,6 +215,7 @@ body {
 .crmtime-cabinet .btn:focus {
     transform: translateY(-1px);
     box-shadow: 0 10px 24px rgba(17, 24, 39, 0.12);
+    color: #ffffff;
 }
 
 .crmtime-cabinet .btn-primary {
